@@ -14,4 +14,8 @@ This program will crawl through your stepmania songs directory and automatically
 
 The basic tap notes are mapped 1-1 with the four marquee lights at the top of the cabinet, while the bass lights only respond to quarter notes, holds, or jumps.
 
-You can see a video of the automatically generated light patterns for one of my charts [Here](http://www.youtube.com/watch?v=zrA6GCFxqMA).
+In order to apply light charts to your entire songs library, browse to your songs directory, then click on the "Add Light Charts" button.
+![Lights Builder Example](http://imgur.com/a/OldiU)
+This process creates backup copies of each chart it writes, just in case something goes wrong, you can restore all the backups at once using the "Restore Backups" button.
+
+## You can see a video of the automatically generated light patterns for one of my charts [Here](http://www.youtube.com/watch?v=zrA6GCFxqMA).
