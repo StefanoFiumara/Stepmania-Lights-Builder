@@ -72,17 +72,15 @@ namespace LightsBuilder.Client
 
             if (prompt != MessageBoxResult.Yes) return;
 
-            int processedCount = 0;
-            foreach (var smFile in smFiles)
+            Parallel.ForEach(smFiles, smFile =>
             {
-                if (smFile.GetChartData(PlayStyle.Lights) != null) continue;
+                if (smFile.GetChartData(PlayStyle.Lights) != null) return;
 
                 smFile.AddLightsData();
                 smFile.SaveChanges();
-                processedCount++;
-            }
+            });
             
-            MessageBox.Show($"{processedCount} Light Charts Added");
+            MessageBox.Show("Light Charts Added");
         }
 
         private bool HasValidPathSelected()
