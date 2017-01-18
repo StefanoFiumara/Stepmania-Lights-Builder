@@ -1,5 +1,5 @@
 # Stepmania Lights Builder
-A small program that automatically adds a lights-cabinet chart to all stepfiles in a stepmania directory, for use with dance machines running SM5.
+###### A small program that automatically adds a lights-cabinet chart to all stepfiles in a stepmania directory, for use with dance machines running SM5.
 
 ---
 A pet peeve that I've had with my ITG Cabinet ever since I switched over to using Stepmania 5 is that SM5 doesn't automatically generate light patterns for charts that don't have them predefined. Instead, all the cabinet lights turn on during a song for each beat, after some time it becomes incredibly annoying and blinding. I was actually a big fan of the way the original ITG software (or even openITG) handled creating light patterns for charts that didn't include them.
