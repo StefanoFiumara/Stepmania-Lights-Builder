@@ -64,18 +64,29 @@ namespace LightsBuilder.Client
 
         private void OnExecuteAddLightCharts()
         {
-            var smFiles = this.DirectoryParser.FindSmFiles(this.SongsFolderPath);
+            var smFiles = this.DirectoryParser.FindSmFiles(this.SongsFolderPath).ToList();
 
-            var prompt = MessageBox.Show(
-                $"You are about to try to process {smFiles.Count} .sm files to add light charts, continue?", "Confirm", MessageBoxButton.YesNo);
+            var prompt = MessageBox.Show($"You are about to try to process {smFiles.Count} .sm files to add light charts, continue?", 
+                                          "Confirm", 
+                                          MessageBoxButton.YesNo);
 
             if (prompt != MessageBoxResult.Yes) return;
-
+            
             Parallel.ForEach(smFiles, smFile =>
             {
-                if (smFile.GetChartData(PlayStyle.Lights) != null) return;
+                if (smFile.GetChartData(PlayStyle.Lights, SongDifficulty.Easy) != null) return;
 
-                smFile.AddLightsData();
+                var reference =    smFile.GetChartData(PlayStyle.Single, SongDifficulty.Hard)
+                                ?? smFile.GetChartData(PlayStyle.Single, SongDifficulty.Challenge)
+                                ?? smFile.GetChartData(PlayStyle.Single, smFile.GetHighestChartedDifficulty(PlayStyle.Single))
+                                ?? smFile.GetChartData(PlayStyle.Double, SongDifficulty.Hard)
+                                ?? smFile.GetChartData(PlayStyle.Double, SongDifficulty.Challenge)
+                                ?? smFile.GetChartData(PlayStyle.Double, smFile.GetHighestChartedDifficulty(PlayStyle.Double));
+
+                if (reference == null) return;
+
+                var newChart = SmFileManager.GenerateLightsChart(reference);
+                smFile.AddNewStepchart(newChart);
                 smFile.SaveChanges();
             });
             
