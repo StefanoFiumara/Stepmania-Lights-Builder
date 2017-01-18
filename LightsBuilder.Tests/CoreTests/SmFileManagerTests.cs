@@ -85,7 +85,7 @@ namespace LightsBuilder.Tests.CoreTests
         [TestMethod]
         public void GetHighestDifficultyTest()
         {
-            var songDifficulty = this.SmFile.GetHighestChartedDifficulty();
+            var songDifficulty = this.SmFile.GetHighestChartedDifficulty(PlayStyle.Single);
 
             Assert.IsTrue(songDifficulty == SongDifficulty.Challenge);
         }

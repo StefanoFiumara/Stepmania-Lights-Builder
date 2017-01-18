@@ -12,6 +12,8 @@ namespace LightsBuilder.Core.Parsers
 
         private readonly FileInfo _smFileInfo;
 
+        public string SongFolderName =>this._smFileInfo?.Directory?.Parent?.Name;
+
         public SmFileManager(string smFilePath) : this( new FileInfo(smFilePath) )
         {
             
@@ -60,7 +62,6 @@ namespace LightsBuilder.Core.Parsers
                 if (line.Contains(difficultyName) == false) continue;
 
                 //check the style
-                //TODO: The style is not always defined 2 lines above the difficulty, fuck.
                 string styleLine = this.FileContent[i - 2]; //the style is defined two lines above the difficulty
                 if (styleLine.Contains(styleName) == false) continue;
 
@@ -212,7 +213,6 @@ namespace LightsBuilder.Core.Parsers
                 if (line.Contains(difficultyName) == false) continue;
 
                 //check the style
-                //TODO: The style is not always defined above the difficulty
                 string styleLine = this.FileContent[i - 2]; //the style is defined two lines above the difficulty
                 if (styleLine.Contains(styleName) == false) continue;
 

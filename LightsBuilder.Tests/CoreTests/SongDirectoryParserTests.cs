@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using LightsBuilder.Core.Data;
 using LightsBuilder.Core.Parsers;
 using LightsBuilder.Core.Repositories;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -22,8 +23,6 @@ namespace LightsBuilder.Tests.CoreTests
         {
             this.Parser = new SongsDirectoryParser();
         }
-
-        #region ParseStepmaniaGroupDirectoryTests
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentException))]
@@ -84,8 +83,6 @@ namespace LightsBuilder.Tests.CoreTests
                 Assert.IsTrue(songData.IsValid());
             }
         }
-
-        #endregion
 
         [TestMethod]
         public void ParseStepmaniaSongsFolder()
