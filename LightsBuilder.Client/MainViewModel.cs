@@ -1,4 +1,3 @@
-using System;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -35,7 +34,7 @@ namespace LightsBuilder.Client
             }
         }
 
-        private SongsDirectoryParser DirectoryParser { get; set; }
+        private SongsDirectoryParser DirectoryParser { get; }
 
         public MainViewModel()
         {
@@ -65,7 +64,7 @@ namespace LightsBuilder.Client
 
         private void OnExecuteAddLightCharts()
         {
-            var smFiles = this.DirectoryParser.GetSmFiles(this.SongsFolderPath);
+            var smFiles = this.DirectoryParser.FindSmFiles(this.SongsFolderPath);
 
             var prompt = MessageBox.Show(
                 $"You are about to try to process {smFiles.Count} .sm files to add light charts, continue?", "Confirm", MessageBoxButton.YesNo);

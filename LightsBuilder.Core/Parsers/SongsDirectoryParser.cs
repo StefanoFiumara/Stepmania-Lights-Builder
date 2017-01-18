@@ -10,109 +10,52 @@ namespace LightsBuilder.Core.Parsers
 {
     public class SongsDirectoryParser
     {
-        public List<SmFileManager> GetSmFiles(string stepmaniaSongsFolderPath)
+        /// <summary>
+        /// Searches through the path given and all its subdirectories for *.sm files
+        /// </summary>
+        /// <param name="rootPath">The root directory in which to begin the search</param>
+        /// <returns>A list of SmFileManager objects to manage each chart that was found</returns>
+        public List<SmFileManager> FindSmFiles(string rootPath)
         {
-            if (Directory.Exists(stepmaniaSongsFolderPath) == false)
+            if (Directory.Exists(rootPath) == false)
                 throw new ArgumentException("Directory passed to GetSmFiles does not exist");
 
-            var songGroupDirectories = Directory.GetDirectories(stepmaniaSongsFolderPath);
-
-            var result = new ConcurrentBag<SmFileManager>();
-
-            Parallel.ForEach(songGroupDirectories, directory =>
-            {
-                var smFiles = this.GetSmFilesForGroup(directory);
-
-                foreach (var smFile in smFiles)
-                {
-                    result.Add(smFile);
-                }
-            });
-
-            return result.ToList();
+            return Directory.GetFiles(rootPath, "*.sm", SearchOption.AllDirectories)
+                            .Select(p => new SmFileManager(p))
+                            .ToList();
         }
 
-        private List<SmFileManager> GetSmFilesForGroup(string songGroupFolderPath)
+        /// <summary>
+        /// Searches through the path given and all its subdirectories for *.sm files and extracts their basic metadata.
+        /// </summary>
+        /// <param name="rootPath">The root directory in which to begin the search</param>
+        /// <returns>A list of SongData objects containing basic information about each song</returns>
+        public List<SongData> GetSongData(string rootPath)
         {
-            if (Directory.Exists(songGroupFolderPath) == false)
-                throw new ArgumentException("Directory passed to GetSmFilesForGroup does not exist");
-
-            var songFolders = Directory.GetDirectories(songGroupFolderPath);
-
-            var result = new ConcurrentBag<SmFileManager>();
-
-            Parallel.ForEach(songFolders, folder =>
-            {
-                string smFilePath = Directory.GetFiles(folder).SingleOrDefault(file => file.EndsWith(".sm"));
-                if (smFilePath == null) return;
-
-                var smFile = new SmFileManager(smFilePath);
-                result.Add(smFile);
-            });
-
-            return result.ToList();
-        }
-
-        public List<SongData> ExtractSongGroupData(string songGroupFolderPath)
-        {
-            if (Directory.Exists(songGroupFolderPath) == false)
-                throw new ArgumentException("Directory passed to ExtractSongGroupData does not exist");
-
-            var songFolders = Directory.GetDirectories(songGroupFolderPath);
-
-            var result = new ConcurrentBag<SongData>();
-
-            Parallel.ForEach(songFolders, folder =>
-            {
-                var songData = this.ExtractSongData(folder);
-                if (songData != null) result.Add(songData);
-            });
-
-            return result.ToList();
-        }
-
-        public List<SongData> ExtractSongsDirectoryData(string stepmaniaSongsFolderPath)
-        {
-            if (Directory.Exists(stepmaniaSongsFolderPath) == false)
+            if (Directory.Exists(rootPath) == false)
                 throw new ArgumentException("Directory passed to ExtractSongsDirectoryData does not exist");
 
-            var songGroupDirectories = Directory.GetDirectories(stepmaniaSongsFolderPath);
-
-            var result = new ConcurrentBag<SongData>();
-
-            Parallel.ForEach(songGroupDirectories, directory =>
-            {
-                var parsedSongData = this.ExtractSongGroupData(directory);
-
-                foreach (var song in parsedSongData)
-                {
-                    result.Add(song);
-                }
-
-            });
-
-            return result.ToList();
+            return Directory.GetFiles(rootPath, "*.sm", SearchOption.AllDirectories)
+                            .Select(this.ExtractSongData)
+                            .ToList();
         }
 
-        private SongData ExtractSongData(string songFolderPath)
+        private SongData ExtractSongData(string smFilePath)
         {
+            var smFileInfo = new FileInfo(smFilePath);
+
+            if (smFileInfo.Exists == false) return null; 
+
             var songData = new SongData();
-
-            string smFilePath = Directory.GetFiles(songFolderPath).SingleOrDefault(file => file.EndsWith(".sm"));
-
-            if (smFilePath == null)
-            {
-                return null;
-            }
 
             var smFile = new SmFileManager(smFilePath);
 
             string bannerPath = smFile.GetAttribute(SmFileAttribute.BANNER);
-            string relativeBannerPath = Path.Combine(songFolderPath, bannerPath);
+            string relativeBannerPath = Path.Combine(smFileInfo.DirectoryName, bannerPath);
 
             songData.SongName = smFile.GetAttribute(SmFileAttribute.TITLE);
             songData.SongBannerPath = Path.GetFullPath(relativeBannerPath);
-            songData.SongGroup = Path.GetFileName(Path.GetDirectoryName(songFolderPath));
+            songData.SongGroup = smFileInfo.Directory?.Parent?.Name;
             songData.DifficultySingles = smFile.GetAllDifficultyRatings(PlayStyle.Single);
             songData.DifficultyDoubles = smFile.GetAllDifficultyRatings(PlayStyle.Double);
 
