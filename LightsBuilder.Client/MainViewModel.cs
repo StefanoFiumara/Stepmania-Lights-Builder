@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using System.Windows;
 using LightsBuilder.Core.Data;
 using Ookii.Dialogs.Wpf;
-using TournamentManager.Client.Commands;
 using LightsBuilder.Core.Parsers;
 
 namespace LightsBuilder.Client
