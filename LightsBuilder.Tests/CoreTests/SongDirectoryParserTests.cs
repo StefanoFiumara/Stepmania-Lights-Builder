@@ -28,13 +28,13 @@ namespace LightsBuilder.Tests.CoreTests
         [ExpectedException(typeof(ArgumentException))]
         public void ParseNonExistentDirectory()
         {
-            this.Parser.GetSongData(TEST_NON_EXISTENT_DIRECTORY);
+            this.Parser.FindSmFiles(TEST_NON_EXISTENT_DIRECTORY);
         }
 
         [TestMethod]
         public void ParseEmptyDirectory()
         {
-            var result = this.Parser.GetSongData(TEST_EMPTY_DIRECTORY).ToList();
+            var result = this.Parser.FindSmFiles(TEST_EMPTY_DIRECTORY).ToList();
 
             Assert.IsTrue(result.Count == 0);
         }
@@ -43,7 +43,7 @@ namespace LightsBuilder.Tests.CoreTests
         public void ParseSongDirectoryOnlyExpert()
         {
             //Parse the Easy As Pie 1 song pack, contains 15 song folders.
-            var result = this.Parser.GetSongData(TEST_SONG_DIRECTORY).ToList();
+            var result = this.Parser.FindSmFiles(TEST_SONG_DIRECTORY).Select(f => f.SongData).ToList();
 
             Assert.IsTrue(result.Count == 15);
 
@@ -58,7 +58,7 @@ namespace LightsBuilder.Tests.CoreTests
         public void ParseSongDirectoryMultipleDifficulties()
         {
             //Parse the Skittles Selection song pack, contains 21 song folders.
-            var result = this.Parser.GetSongData(TEST_MULTIPLE_DIFFICULTIES).ToList();
+            var result = this.Parser.FindSmFiles(TEST_MULTIPLE_DIFFICULTIES).Select(f => f.SongData).ToList();
 
             Assert.IsTrue(result.Count == 21);
 
@@ -73,7 +73,7 @@ namespace LightsBuilder.Tests.CoreTests
         public void ParseSongDirectoryNoExpertDifficulty()
         {
             //Parse the DDR 1st Mix song pack, contains 9 song folders.
-            var result = this.Parser.GetSongData(TEST_NO_EXPERT_DIFFICULTY).ToList();
+            var result = this.Parser.FindSmFiles(TEST_NO_EXPERT_DIFFICULTY).Select(f => f.SongData).ToList();
 
             Assert.IsTrue(result.Count == 9);
 
@@ -87,7 +87,7 @@ namespace LightsBuilder.Tests.CoreTests
         [TestMethod]
         public void ParseStepmaniaSongsFolder()
         {
-            var result = this.Parser.GetSongData("../../TestData");
+            var result = this.Parser.FindSmFiles("../../TestData").Select(f => f.SongData);
 
             var groupedResult = result.GroupBy(song => song.SongGroup).ToDictionary(k => k.Key, e => e.ToList());
 
@@ -98,7 +98,7 @@ namespace LightsBuilder.Tests.CoreTests
         public void TestSavedSongGroupNameChange()
         {
             //Parse the Skittles Selection song pack, contains 21 song folders.
-            var result = this.Parser.GetSongData(TEST_MULTIPLE_DIFFICULTIES).ToList();
+            var result = this.Parser.FindSmFiles(TEST_MULTIPLE_DIFFICULTIES).Select(f => f.SongData).ToList();
 
             Assert.IsTrue(result.Count == 21);
 

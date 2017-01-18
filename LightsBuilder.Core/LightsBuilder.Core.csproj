@@ -41,7 +41,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Data\ChartData.cs" />
     <Compile Include="Data\Enums.cs" />
+    <Compile Include="Data\MeasureData.cs" />
+    <Compile Include="Data\NoteData.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Parsers\SmFileManager.cs" />
     <Compile Include="Data\SongData.cs" />

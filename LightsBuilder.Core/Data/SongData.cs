@@ -20,19 +20,11 @@ namespace LightsBuilder.Core.Data
         [DataMember]
         public string SongBannerPath { get; set; }
 
-        [DataMember]
-        public Dictionary<SongDifficulty, int> DifficultySingles { get; set; }
-
-        [DataMember]
-        public Dictionary<SongDifficulty, int> DifficultyDoubles { get; set; }
-
         public bool IsValid()
         {
             return string.IsNullOrEmpty(this.SongName) == false &&
                    string.IsNullOrEmpty(this.SongGroup) == false &&
-                   string.IsNullOrEmpty(this.SongBannerPath) == false &&
-                   this.DifficultySingles.Keys.Count == 5 &&
-                   this.DifficultyDoubles.Keys.Count == 5;
+                   string.IsNullOrEmpty(this.SongBannerPath) == false;
         }
 
         public bool IsEqualTo(SongData other)
@@ -44,7 +36,7 @@ namespace LightsBuilder.Core.Data
 
         public override string ToString()
         {
-            return $"{this.SongGroup}-{Path.GetFileNameWithoutExtension(this.SongBannerPath)}";
+            return $"{this.SongGroup}-{this.SongName}";
         }
     }
 

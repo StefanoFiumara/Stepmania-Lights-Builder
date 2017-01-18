@@ -56,32 +56,7 @@ namespace LightsBuilder.Tests.CoreTests
 
             Assert.IsTrue(string.IsNullOrEmpty(value));
         }
-
-        [TestMethod]
-        public void GetDifficultyRatingTest()
-        {
-            int rating = this.SmFile.GetDifficultyRating(PlayStyle.Single, SongDifficulty.Challenge);
-
-            Assert.IsTrue(rating == 8);
-        }
-
-        [TestMethod]
-        public void GetNonExistentDifficultyRatingTest()
-        {
-            int rating = this.SmFile.GetDifficultyRating(PlayStyle.Double, SongDifficulty.Beginner);
-
-            Assert.IsTrue(rating == 0);
-        }
-
-
-        [TestMethod]
-        public void GetAllDifficultyRatingsTest()
-        {
-            Dictionary<SongDifficulty, int> ratings = this.SmFile.GetAllDifficultyRatings(PlayStyle.Single);
-
-            Assert.IsTrue(ratings.Keys.Count == 5);
-        }
-
+        
         [TestMethod]
         public void GetHighestDifficultyTest()
         {
@@ -93,17 +68,16 @@ namespace LightsBuilder.Tests.CoreTests
         [TestMethod]
         public void GetChartDataTest()
         {
-            var data = this.SmFile.GetChartData(PlayStyle.Single, SongDifficulty.Hard);
+            var data = this.SmFile.GetChartData(PlayStyle.Single, SongDifficulty.Challenge);
 
-            Assert.IsTrue(data.Count == 399);
+            Assert.IsTrue(data.Measures.All(m => m.Notes.Count % 4 == 0));
         }
 
         [TestMethod]
         public void AddLightsDataTest()
         {
-            this.SmFile.AddLightsData();
-
-            var lightsData = this.SmFile.GetChartData(PlayStyle.Lights);
+            var reference = this.SmFile.GetChartData(PlayStyle.Single, SongDifficulty.Challenge);
+            var lightsData = SmFileManager.GenerateLightsChart(reference);
 
             Assert.IsTrue(lightsData != null);
         }
@@ -111,15 +85,16 @@ namespace LightsBuilder.Tests.CoreTests
         [TestMethod]
         public void SaveChartDataTest()
         {
-            var hasLightsDataBeforeSave = this.SmFile.GetChartData(PlayStyle.Lights) != null;
+            var hasLightsDataBeforeSave = this.SmFile.GetChartData(PlayStyle.Lights, SongDifficulty.Easy) != null;
+            var reference = this.SmFile.GetChartData(PlayStyle.Single, SongDifficulty.Hard);
+            var lightsData = SmFileManager.GenerateLightsChart(reference);
 
-            this.SmFile.AddLightsData();
-
+            this.SmFile.AddNewStepchart(lightsData);
             this.SmFile.SaveChanges();
 
             this.SmFile = new SmFileManager(new FileInfo("../../TestData/BUTTERFLY.sm"));
 
-            var hasLightsDataAfterSave = this.SmFile.GetChartData(PlayStyle.Lights) != null;
+            var hasLightsDataAfterSave = this.SmFile.GetChartData(PlayStyle.Lights, SongDifficulty.Easy) != null;
 
             Assert.IsFalse(hasLightsDataBeforeSave);
             Assert.IsTrue(hasLightsDataAfterSave);

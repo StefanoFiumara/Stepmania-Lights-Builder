@@ -1,6 +1,7 @@
 ﻿// ReSharper disable InconsistentNaming
 
 using System;
+using System.Linq;
 
 namespace LightsBuilder.Core.Data
 {
@@ -27,7 +28,7 @@ namespace LightsBuilder.Core.Data
         STOPS,
         TIMESIGNATURES,
         BGCHANGES,
-        KEYSOUNDS
+        KEYSOUNDS,
     }
 
     public enum SongDifficulty
@@ -43,6 +44,8 @@ namespace LightsBuilder.Core.Data
     {
         Single,
         Double,
+        Couple,
+        Solo,
         Lights
     }
 
@@ -56,11 +59,44 @@ namespace LightsBuilder.Core.Data
                     return "dance-single";
                 case PlayStyle.Double:
                     return "dance-double";
+                case PlayStyle.Couple:
+                    return "dance-couple";
+                case PlayStyle.Solo:
+                    return "dance-solo";
                 case PlayStyle.Lights:
                     return "lights-cabinet";
+                
                 default:
                     throw new ArgumentOutOfRangeException(nameof(style), style, null);
             }
+        }
+
+        public static PlayStyle ToStyleEnum(string styleName)
+        {
+            styleName = styleName.Trim().TrimEnd(':');
+            switch (styleName)
+            {
+                case "dance-single":
+                    return PlayStyle.Single;
+                case "dance-double":
+                    return PlayStyle.Double;
+                case "dance-couple":
+                    return PlayStyle.Couple;
+                case "dance-solo":
+                    return PlayStyle.Solo;
+                case "lights-cabinet":
+                    return PlayStyle.Lights;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(styleName), styleName, null);
+            }
+        }
+
+        public static SongDifficulty ToSongDifficultyEnum(string difficultyName)
+        {
+            return
+                Enum.GetValues(typeof(SongDifficulty))
+                    .OfType<SongDifficulty>()
+                    .SingleOrDefault(d => difficultyName.Contains(d.ToString()));
         }
     }
 }

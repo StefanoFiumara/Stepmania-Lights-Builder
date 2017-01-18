@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Input;
 
-namespace TournamentManager.Client.Commands
+namespace LightsBuilder.Client
 {
     public class RelayCommand<T> : ICommand
     {
