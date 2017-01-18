@@ -14,5 +14,4 @@ This program will crawl through your stepmania songs directory and automatically
 
 The basic tap notes are mapped 1-1 with the four marquee lights at the top of the cabinet, while the bass lights only respond to quarter notes, holds, or jumps.
 
-You can see a video of the automatically generated light patterns for one of my charts here:
-[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/zrA6GCFxqMA/0.jpg)](http://www.youtube.com/watch?v=zrA6GCFxqMA)
+You can see a video of the automatically generated light patterns for one of my charts [Here](http://www.youtube.com/watch?v=zrA6GCFxqMA).
