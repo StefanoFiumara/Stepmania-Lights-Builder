@@ -1,0 +1,43 @@
+﻿<Window x:Class="LightsBuilder.Client.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:LightsBuilder.Client"
+        mc:Ignorable="d"
+        Icon="Images/window_icon.png"
+        Title="Lights Chart Builder" Height="210" Width="525">
+    <Window.DataContext>
+        <local:MainViewModel />
+    </Window.DataContext>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="Stepmania Lights Chart Builder" HorizontalAlignment="Center" FontSize="24" FontWeight="Bold"/>
+            <TextBlock Text="Navigate to your Stepmania/Songs folder to automatically generate light charts for your entire library. A backup file will be created for each chart in case anything goes wrong."
+                       TextWrapping="Wrap"
+                       Margin="5"/>
+        </StackPanel>
+        
+        <StackPanel Grid.Row="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Margin="5" Text="{Binding SongsFolderPath}" />
+                <Button Margin="5" Grid.Column="1" Width="75"
+                        Content="Browse..."
+                        Command="{Binding BrowseCommand}"/>
+            </Grid>
+            
+            <Button Margin="5" Content="Add Light Charts"  Command="{Binding AddLightChartsCommand}"/>
+            <Button Margin="5" Content="Restore backups"  Command="{Binding RestoreBackupsCommand}"/>
+            
+        </StackPanel>
+    </Grid>
+</Window>
