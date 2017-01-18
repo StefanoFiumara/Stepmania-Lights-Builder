@@ -86,7 +86,9 @@ namespace LightsBuilder.Core.Parsers
         {
             if (this.GetChartData(PlayStyle.Lights) != null)
             {
-                throw new InvalidOperationException("This file already contains Lights Data");
+                return;
+                //throw new InvalidOperationException("This file already contains Lights Data");
+                //TODO: Log this to a file
             }
 
             var referenceChart = this.GetChartData(PlayStyle.Single, SongDifficulty.Hard) ??
@@ -97,8 +99,8 @@ namespace LightsBuilder.Core.Parsers
             if (referenceChart == null)
             {
                 return;
-                //throw new InvalidOperationException(
-                //    $"The chart located at {this._smFileInfo.FullName} does not contain valid chart data for singles or doubles play, so a lights chart cannot be generated.");
+                //throw new InvalidOperationException($"The chart located at {this._smFileInfo.FullName} does not contain valid chart data for singles or doubles play, so a lights chart cannot be generated.");
+                //TODO: Log this to a file
             }
             var referenceChartStyle = referenceChart
                 .First(beat => !string.IsNullOrWhiteSpace(beat) && !beat.Contains("//"))
@@ -117,77 +119,88 @@ namespace LightsBuilder.Core.Parsers
 
             var measures = string.Join("\n", referenceChart).Split(',');
             bool isHolding = false;
-
-            foreach (string measure in measures)
+            try
             {
-                var beats = measure.Split('\n');
-
-                int quarterNoteBeatIndicator = beats.Length/4;
-                int noteIndex = 0;
-
-                foreach (var beat in beats)
+                foreach (string measure in measures)
                 {
-                    if (string.IsNullOrWhiteSpace(beat) || beat.Contains("//")) continue;
+                    var beats = measure.Split('\n');
 
-                    string marqueeLights = beat.Replace('M', '0');  //ignore mines
+                    int quarterNoteBeatIndicator = beats.Length/4;
+                    int noteIndex = 0;
 
-                    if (referenceChartStyle == PlayStyle.Double)
+                    foreach (var beat in beats)
                     {
-                        string convertedMarqueLights = string.Empty;
-                        for (int i = 0; i < 4; i++)
+                        //TODO: Refactor, this whole thing is way too long
+                        if (string.IsNullOrWhiteSpace(beat) || beat.Contains("//")) continue;
+
+                        #region -- Marquee Lights --
+                        string marqueeLights = beat.Replace('M', '0');  //ignore mines
+
+                        if (referenceChartStyle == PlayStyle.Double)
                         {
-                            char note = '0';
+                            string convertedMarqueLights = string.Empty;
+                            for (int i = 0; i < 4; i++)
+                            {
+                                char note = '0';
 
-                            int p1 = i;
-                            int p2 = i + 4;
+                                int p1 = i;
+                                int p2 = i + 4;
 
-                            if (marqueeLights[p1] != '0') note = marqueeLights[p1];
-                            if (marqueeLights[p2] != '0') note = marqueeLights[p2];
+                                if (marqueeLights[p1] != '0') note = marqueeLights[p1];
+                                if (marqueeLights[p2] != '0') note = marqueeLights[p2];
 
-                            convertedMarqueLights += note;
+                                convertedMarqueLights += note;
+                            }
+
+                            marqueeLights = convertedMarqueLights;
+                        }
+                        #endregion
+
+                        #region -- Bass Lights --
+
+                        bool isQuarterBeat = noteIndex % quarterNoteBeatIndicator == 0;
+                        bool hasNote       = marqueeLights.Any(c => c != '0');
+                        bool isHoldBegin   = marqueeLights.Any(c => c == '2');
+                        bool isHoldEnd     = marqueeLights.Any(c => c == '3');
+                        bool isJump        = marqueeLights.Count(c => c != '0') >= 2;
+
+                        string bassLights = (hasNote && isQuarterBeat) || isJump ? "11" : "00";
+
+                        if (isHoldBegin && !isHolding)
+                        {
+                            bassLights = "22"; //hold start
+                            isHolding = true;
+                        }
+                        else if (isHolding)
+                        {
+                            bassLights = "00"; //ignore beats if there is a hold
                         }
 
-                        marqueeLights = convertedMarqueLights;
+                        if (isHoldEnd && !isHoldBegin)
+                        {
+                            bassLights = "33"; //hold end
+                            isHolding = false;
+                        }
+                        #endregion
+
+                        lightsData.Add($"{marqueeLights}{bassLights}00");
+
+                        noteIndex++;
                     }
 
-                    //TODO: Refactor this
-                    bool isQuarterBeat = noteIndex % quarterNoteBeatIndicator == 0;
-                    bool hasNote       = marqueeLights.Any(c => c != '0');
-                    bool isHoldBegin   = marqueeLights.Any(c => c == '2');
-                    bool isHoldEnd     = marqueeLights.Any(c => c == '3');
-                    bool isJump        = marqueeLights.Count(c => c != '0') >= 2;
-
-                    string bassLights = (hasNote && isQuarterBeat) || isJump ? "11" : "00";
-
-                    if (isHoldBegin && !isHolding)
-                    {
-                        bassLights = "22"; //hold start
-                        isHolding = true;
-                    }
-                    else if (isHolding)
-                    {
-                        bassLights = "00"; //ignore beats if there is a hold
-                    }
-
-                    if (isHoldEnd && !isHoldBegin)
-                    {
-                        bassLights = "33"; //hold end
-                        isHolding = false;
-                    }
-
-
-                    lightsData.Add($"{marqueeLights}{bassLights}00");
-
-                    noteIndex++;
+                    lightsData.Add(",");
                 }
 
-                lightsData.Add(",");
+                lightsData.RemoveAt(lightsData.Count-1); //remove the last comma, replace with semicolon
+                lightsData.Add(";");
+
+                this.FileContent.AddRange(lightsData);
             }
-
-            lightsData.RemoveAt(lightsData.Count-1); //remove the last comma, replace with semicolon
-            lightsData.Add(";");
-
-            this.FileContent.AddRange(lightsData);
+            catch (Exception)
+            {
+                //Swallow
+                //TODO: Log the exception to a file
+            }
         }
 
         public void SaveChanges()
