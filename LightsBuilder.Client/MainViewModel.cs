@@ -1,9 +1,11 @@
+using System;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using LightsBuilder.Core.Data;
 using Ookii.Dialogs.Wpf;
 using LightsBuilder.Core.Parsers;
@@ -44,51 +46,75 @@ namespace LightsBuilder.Client
             this.DirectoryParser = new SongsDirectoryParser();
         }
 
-        private void RestoreBackups()
+        private async void RestoreBackups()
         {
+            Mouse.OverrideCursor = Cursors.Wait;
 
-            var backupFiles = Directory.GetFiles(this.SongsFolderPath, "*.sm*", SearchOption.AllDirectories).Where(f => f.EndsWith(".backup")).Select(f => new FileInfo(f));
-
-            foreach (var backupFile in backupFiles)
+            await Task.Run(() =>
             {
-                var correspondingSmFile = new FileInfo(backupFile.FullName.Replace(".backup", string.Empty));
+                var backupFiles = Directory.GetFiles(this.SongsFolderPath, "*.sm*", SearchOption.AllDirectories).Where(f => f.EndsWith(".backup")).Select(f => new FileInfo(f));
 
-                if (correspondingSmFile.Exists) File.Delete(correspondingSmFile.FullName);
+                Parallel.ForEach(backupFiles, file =>
+                {
+                    var correspondingSmFile = new FileInfo(file.FullName.Replace(".backup", string.Empty));
 
-                File.Copy(backupFile.FullName, correspondingSmFile.FullName, true);
-            }
+                    if (correspondingSmFile.Exists) File.Delete(correspondingSmFile.FullName);
 
+                    File.Copy(file.FullName, correspondingSmFile.FullName, true);
+                });
+            });
+            
+
+            Mouse.OverrideCursor = null;
             MessageBox.Show("All backups restored");
         }
 
-        private void OnExecuteAddLightCharts()
+        private async void OnExecuteAddLightCharts()
         {
-            var smFiles = this.DirectoryParser.FindSmFiles(this.SongsFolderPath).ToList();
+            Mouse.OverrideCursor = Cursors.Wait;
+
+            var smFiles = await Task.Run(() => this.DirectoryParser.FindSmFiles(this.SongsFolderPath).ToList());
+
+            Mouse.OverrideCursor = null;
 
             var prompt = MessageBox.Show($"You are about to try to process {smFiles.Count} .sm files to add light charts, continue?", 
                                           "Confirm", 
                                           MessageBoxButton.YesNo);
 
             if (prompt != MessageBoxResult.Yes) return;
-            
-            Parallel.ForEach(smFiles, smFile =>
+
+            Mouse.OverrideCursor = Cursors.Wait;
+
+            await Task.Run(() =>
             {
-                if (smFile.GetChartData(PlayStyle.Lights, SongDifficulty.Easy) != null) return;
+                Parallel.ForEach(smFiles, smFile =>
+                {
+                    if (smFile.GetChartData(PlayStyle.Lights, SongDifficulty.Easy) != null) return;
 
-                var reference =    smFile.GetChartData(PlayStyle.Single, SongDifficulty.Hard)
-                                ?? smFile.GetChartData(PlayStyle.Single, SongDifficulty.Challenge)
-                                ?? smFile.GetChartData(PlayStyle.Single, smFile.GetHighestChartedDifficulty(PlayStyle.Single))
-                                ?? smFile.GetChartData(PlayStyle.Double, SongDifficulty.Hard)
-                                ?? smFile.GetChartData(PlayStyle.Double, SongDifficulty.Challenge)
-                                ?? smFile.GetChartData(PlayStyle.Double, smFile.GetHighestChartedDifficulty(PlayStyle.Double));
+                    var reference = smFile.GetChartData(PlayStyle.Single, SongDifficulty.Hard)
+                                    ?? smFile.GetChartData(PlayStyle.Single, SongDifficulty.Challenge)
+                                    ?? smFile.GetChartData(PlayStyle.Single, smFile.GetHighestChartedDifficulty(PlayStyle.Single))
+                                    ?? smFile.GetChartData(PlayStyle.Double, SongDifficulty.Hard)
+                                    ?? smFile.GetChartData(PlayStyle.Double, SongDifficulty.Challenge)
+                                    ?? smFile.GetChartData(PlayStyle.Double, smFile.GetHighestChartedDifficulty(PlayStyle.Double));
 
-                if (reference == null) return;
+                    if (reference == null) return;
 
-                var newChart = SmFileManager.GenerateLightsChart(reference);
-                smFile.AddNewStepchart(newChart);
-                smFile.SaveChanges();
+                    try
+                    {
+                        var newChart = SmFileManager.GenerateLightsChart(reference);
+                        smFile.AddNewStepchart(newChart);
+                        smFile.Dispose();
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"Lights Builder Exception Caught: {e.Message}");
+                    }
+                });
             });
             
+
+            Mouse.OverrideCursor = null;
             MessageBox.Show("Light Charts Added");
         }
 

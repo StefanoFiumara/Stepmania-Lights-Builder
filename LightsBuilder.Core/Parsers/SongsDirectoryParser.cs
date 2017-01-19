@@ -21,6 +21,7 @@ namespace LightsBuilder.Core.Parsers
                 throw new ArgumentException("Directory passed to FindSmFiles does not exist");
 
             return Directory.GetFiles(rootPath, "*.sm", SearchOption.AllDirectories)
+                            .AsParallel()
                             .Select(p => new SmFileManager(p));
         }
     }

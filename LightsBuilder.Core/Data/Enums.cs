@@ -42,6 +42,7 @@ namespace LightsBuilder.Core.Data
 
     public enum PlayStyle
     {
+        Undefined,
         Single,
         Double,
         Couple,
@@ -87,7 +88,7 @@ namespace LightsBuilder.Core.Data
                 case "lights-cabinet":
                     return PlayStyle.Lights;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(styleName), styleName, null);
+                    return PlayStyle.Undefined;
             }
         }
 

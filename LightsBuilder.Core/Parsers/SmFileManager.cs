@@ -6,15 +6,16 @@ using LightsBuilder.Core.Data;
 
 namespace LightsBuilder.Core.Parsers
 {
-    public class SmFileManager
+    public class SmFileManager : IDisposable
     {
         
-        private FileInfo SmFileInfo { get; }
-        private List<string> FileContent { get; }
+        private FileInfo SmFileInfo { get;  set; }
 
-        private List<ChartData> StepCharts { get; }
+        private List<ChartData> StepCharts { get;  set; }
 
-        public SongData SongData { get; }
+        
+
+        public SongData SongData { get; private set; }
 
         public SmFileManager(string smFilePath) : this( new FileInfo(smFilePath) )
         {
@@ -25,12 +26,10 @@ namespace LightsBuilder.Core.Parsers
         {
             this.SmFileInfo = smFile;
 
-            if (this.SmFileInfo.Exists == false || this.SmFileInfo.Extension != ".sm")
+            if (this.SmFileInfo.Exists == false || this.SmFileInfo.Extension.ToLower() != ".sm")
             {
                 throw new ArgumentException($"The given .sm file path is either invalid or a file was not found. Path: {this.SmFileInfo.FullName}");
             }
-
-            this.FileContent = File.ReadAllLines(this.SmFileInfo.FullName).ToList();
 
             this.StepCharts = this.ExtractChartData();
             this.SongData = this.ExtractSongData();
@@ -56,27 +55,34 @@ namespace LightsBuilder.Core.Parsers
         private List<ChartData> ExtractChartData()
         {
             var result = new List<ChartData>();
+            var fileContent = File.ReadAllLines(this.SmFileInfo.FullName).ToList();
 
-            for (int i = 0; i < this.FileContent.Count; i++)
+            for (int i = 0; i < fileContent.Count; i++)
             {
-                if (!this.FileContent[i].Contains("#NOTES:")) continue;
+                if (!fileContent[i].Contains("#NOTES:")) continue;
 
-                string styleLine      = this.FileContent[i + 1];
-                string author         = this.FileContent[i + 2].Trim().TrimEnd(':');
-                string difficultyLine = this.FileContent[i + 3];
-                int rating            = int.Parse( this.FileContent[i + 4].Trim().TrimEnd(':') );
+                string styleLine      = fileContent[i + 1];
+                string author         = fileContent[i + 2].Trim().TrimEnd(':');
+                string difficultyLine = fileContent[i + 3];
+                int rating            = (int)double.Parse(fileContent[i + 4].Trim().TrimEnd(':') );
 
                 PlayStyle      style      = EnumExtensions.ToStyleEnum(styleLine);
                 SongDifficulty difficulty = EnumExtensions.ToSongDifficultyEnum(difficultyLine);
 
-
                 int noteDataStartIndex = i + 6;
+                //Stupid Edge case
+                if (fileContent[i + 5].Trim().EndsWith(":") == false)
+                {
+                    var nextLine = string.Concat(fileContent[i + 5].Trim().SkipWhile(c=> c != ':').Skip(1));
+                    fileContent.Insert(i + 6, nextLine);
+                }
+                
                 int noteDataEndIndex = noteDataStartIndex;
 
-                while (this.FileContent[noteDataEndIndex].Contains(";") == false) noteDataEndIndex++;
+                while (fileContent[noteDataEndIndex].Contains(";") == false) noteDataEndIndex++;
 
                 var noteData =
-                    this.FileContent.Skip(noteDataStartIndex)
+                    fileContent.Skip(noteDataStartIndex)
                         .Take(noteDataEndIndex - noteDataStartIndex)
                         .ToList();
 
@@ -92,9 +98,13 @@ namespace LightsBuilder.Core.Parsers
 
         public string GetAttribute(SmFileAttribute attribute)
         {
+            if (this._isDisposed) throw new InvalidOperationException("This Object has already been disposed!");
+
             string attributeName = attribute.ToString();
 
-            string attributeLine = this.FileContent.FirstOrDefault(line => line.Contains($"#{attributeName}:"));
+            var fileContent = File.ReadAllLines(this.SmFileInfo.FullName);
+
+            string attributeLine = fileContent.FirstOrDefault(line => line.Contains($"#{attributeName}:"));
             
             if (attributeLine != null)
             {
@@ -108,21 +118,30 @@ namespace LightsBuilder.Core.Parsers
 
         public ChartData GetChartData(PlayStyle style, SongDifficulty difficulty)
         {
-            return this.StepCharts.SingleOrDefault(c => c.PlayStyle == style && c.Difficulty == difficulty);
+            if (this._isDisposed) throw new InvalidOperationException("This Object has already been disposed!");
+
+            return this.StepCharts.FirstOrDefault(c => c.PlayStyle == style && c.Difficulty == difficulty);
         }
 
         public SongDifficulty GetHighestChartedDifficulty(PlayStyle style)
         {
+            if (this._isDisposed) throw new InvalidOperationException("This Object has already been disposed!");
+
             return
                 this.StepCharts
                     .Where(c => c.PlayStyle == style)
                     .OrderByDescending(c => c.Difficulty)
                     .Select(d => d.Difficulty)
-                    .First();
+                    .FirstOrDefault();
         }
 
         public void AddNewStepchart(ChartData chartData)
         {
+            if(this._isDisposed) throw new InvalidOperationException("This Object has already been disposed!");
+
+            if(chartData == null)
+                throw new ArgumentNullException(nameof(chartData), "Attempted to add null chart data.");
+
             if (this.GetChartData(chartData.PlayStyle, chartData.Difficulty) != null)
             {
                 string exMessage = $"The stepfile for {this.SongData.SongName} already contains a stepchart for {chartData.PlayStyle}-{chartData.Difficulty}";
@@ -131,20 +150,12 @@ namespace LightsBuilder.Core.Parsers
 
             this.StepCharts.Add(chartData);
 
-            this.FileContent.AddRange( chartData.GetRawChartData() );
-        }
-
-        public void SaveChanges()
-        {
             var backupFilePath = this.SmFileInfo.FullName + ".backup";
-
             File.Copy(this.SmFileInfo.FullName, backupFilePath, true);
 
-            File.Delete(this.SmFileInfo.FullName);
-
-            File.WriteAllLines(this.SmFileInfo.FullName, this.FileContent);
+            File.AppendAllLines(this.SmFileInfo.FullName, chartData.GetRawChartData());
         }
-
+        
         public static ChartData GenerateLightsChart(ChartData referenceChart)
         {
             if (referenceChart == null)
@@ -223,6 +234,16 @@ namespace LightsBuilder.Core.Parsers
             }
 
             return convertedMarqueeLights;
+        }
+
+        private bool _isDisposed;
+
+        public void Dispose()
+        {
+            this.SmFileInfo = null;
+            this.StepCharts = null;
+            this.SongData = null;
+            this._isDisposed = true;
         }
     }
 }

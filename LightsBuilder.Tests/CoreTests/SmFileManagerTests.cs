@@ -90,7 +90,6 @@ namespace LightsBuilder.Tests.CoreTests
             var lightsData = SmFileManager.GenerateLightsChart(reference);
 
             this.SmFile.AddNewStepchart(lightsData);
-            this.SmFile.SaveChanges();
 
             this.SmFile = new SmFileManager(new FileInfo("../../TestData/BUTTERFLY.sm"));
 
