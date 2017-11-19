@@ -51,6 +51,8 @@
     <Compile Include="Parsers\SongsDirectoryParser.cs" />
     <Compile Include="Repositories\IRepository.cs" />
     <Compile Include="Repositories\SongDataRepository.cs" />
+    <Compile Include="Data\SscChartData.cs" />
+    <Compile Include="Data\SmChartData.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

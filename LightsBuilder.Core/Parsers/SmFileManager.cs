@@ -108,7 +108,7 @@ namespace LightsBuilder.Core.Parsers
 						.Take(noteDataEndIndex - noteDataStartIndex)
 						.ToList();
 
-				var chartData = new ChartData(style, difficulty, rating, authorString, noteData);
+				SscChartData chartData = new SscChartData(style, difficulty, rating, authorString, noteData);
 
 				result.Add(chartData);
 
@@ -153,7 +153,7 @@ namespace LightsBuilder.Core.Parsers
 						.Take(noteDataEndIndex - noteDataStartIndex)
 						.ToList();
 
-				var chartData = new ChartData(style, difficulty, rating, author, noteData);
+				var chartData = new SmChartData(style, difficulty, rating, author, noteData);
 
 				result.Add(chartData);
 
@@ -228,8 +228,16 @@ namespace LightsBuilder.Core.Parsers
             if (referenceChart == null)
                 throw new ArgumentNullException(nameof(referenceChart), "referenceChart cannot be null.");
 
+            ChartData lightChart = null;
 
-            var lightChart = new ChartData(PlayStyle.Lights, SongDifficulty.Easy, difficultyRating: 1, chartAuthor: "SMLightsBuilder");
+			if (referenceChart.ChartFileFormat == ChartFormat.sm)
+			{
+				lightChart = new SmChartData(PlayStyle.Lights, SongDifficulty.Easy, difficultyRating: 1, chartAuthor: "SMLightsBuilder");
+			}
+			else if (referenceChart.ChartFileFormat == ChartFormat.ssc)
+			{
+				lightChart = new SscChartData(PlayStyle.Lights, SongDifficulty.Easy, difficultyRating: 1, chartAuthor: "SMLightsBuilder");
+			}
 
             bool isHolding = false;
             foreach (var referenceMeasure in referenceChart.Measures)
