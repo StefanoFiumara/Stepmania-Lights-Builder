@@ -37,6 +37,7 @@ namespace LightsBuilder.Core.Data
                 $"#CHARTSTYLE:{this.ChartStyle};",
                 $"#DIFFICULTY:{this.Difficulty};",
                 $"#METER:{this.DifficultyRating};",
+                $"#RADARVALUES:0.000,0.000,0.000,0.000,0.000:;",
                 $"#CREDIT:{this.ChartAuthor};",
 				$"#NOTES:"
 			};
