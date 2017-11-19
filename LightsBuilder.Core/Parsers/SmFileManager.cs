@@ -13,7 +13,7 @@ namespace LightsBuilder.Core.Parsers
 
         private List<ChartData> StepCharts { get;  set; }
 
-        
+        private ChartFormat SmChartFormat { get; set; }
 
         public SongData SongData { get; private set; }
 
@@ -26,13 +26,33 @@ namespace LightsBuilder.Core.Parsers
         {
             this.SmFileInfo = smFile;
 
-            if (this.SmFileInfo.Exists == false || this.SmFileInfo.Extension.ToLower() != ".sm")
+            if (this.SmFileInfo.Exists == false)
             {
-                throw new ArgumentException($"The given .sm file path is either invalid or a file was not found. Path: {this.SmFileInfo.FullName}");
+                throw new ArgumentException($"The given file path is either invalid or a file was not found. Path: {this.SmFileInfo.FullName}");
             }
 
-            this.StepCharts = this.ExtractChartData();
+            ChartFormat curChartFormat;
+            Enum.TryParse(this.SmFileInfo.Extension.ToLower().Replace(".", ""), out curChartFormat);
+
+            if(curChartFormat == ChartFormat.Undefined)
+            {
+                throw new ArgumentException($"The given file is must either be a .sm or .ssc. Path: {this.SmFileInfo.FullName}");
+            }
+
+            this.SmChartFormat = curChartFormat;
             this.SongData = this.ExtractSongData();
+
+            if(this.SmChartFormat == ChartFormat.sm)
+            {
+                this.StepCharts = this.ExtractSmChartData();
+            }
+            else if (this.SmChartFormat == ChartFormat.ssc)
+            {
+                this.StepCharts = this.ExtractSscChartData();
+            }
+
+
+
         }
 
         private SongData ExtractSongData()
@@ -52,48 +72,95 @@ namespace LightsBuilder.Core.Parsers
             return songData;
         }
 
-        private List<ChartData> ExtractChartData()
+        private List<ChartData> ExtractSscChartData()
         {
-            var result = new List<ChartData>();
-            var fileContent = File.ReadAllLines(this.SmFileInfo.FullName).ToList();
+			var result = new List<ChartData>();
+			var fileContent = File.ReadAllLines(this.SmFileInfo.FullName).ToList();
 
             for (int i = 0; i < fileContent.Count; i++)
             {
-                if (!fileContent[i].Contains("#NOTES:")) continue;
+                if (!fileContent[i].Contains("#NOTEDATA:")) continue;
 
-                string styleLine      = fileContent[i + 1];
-                string author         = fileContent[i + 2].Trim().TrimEnd(':');
-                string difficultyLine = fileContent[i + 3];
-                int rating            = (int)double.Parse(fileContent[i + 4].Trim().TrimEnd(':') );
+                string styleString = fileContent[i + 2].Replace("#STEPSTYPE:", "").Replace(";", "");
+                string authorString = fileContent[i + 8].Replace("#CREDIT:", "").Replace(";", "");
+				string difficultyString = fileContent[i + 5].Replace("#DIFFICULTY:", "").Replace(";", "");
+                string meterString = fileContent[i + 6].Replace("#METER:", "").Replace(";", "");
+                int rating = (int)double.Parse(meterString);
 
-                PlayStyle      style      = EnumExtensions.ToStyleEnum(styleLine);
-                SongDifficulty difficulty = EnumExtensions.ToSongDifficultyEnum(difficultyLine);
+				PlayStyle style = EnumExtensions.ToStyleEnum(styleString);
+				SongDifficulty difficulty = EnumExtensions.ToSongDifficultyEnum(difficultyString);
 
-                int noteDataStartIndex = i + 6;
-                //Stupid Edge case
-                if (fileContent[i + 5].Trim().EndsWith(":") == false)
+                int noteDataStartIndex;
+
+                for (noteDataStartIndex = i; noteDataStartIndex < fileContent.Count; noteDataStartIndex++)
                 {
-                    var nextLine = string.Concat(fileContent[i + 5].Trim().SkipWhile(c=> c != ':').Skip(1));
-                    fileContent.Insert(i + 6, nextLine);
+                    if (fileContent[noteDataStartIndex].Contains("#NOTES:")) break;
                 }
-                
-                int noteDataEndIndex = noteDataStartIndex;
 
-                while (fileContent[noteDataEndIndex].Contains(";") == false) noteDataEndIndex++;
+                noteDataStartIndex++;
 
-                var noteData =
-                    fileContent.Skip(noteDataStartIndex)
-                        .Take(noteDataEndIndex - noteDataStartIndex)
-                        .ToList();
+				int noteDataEndIndex = noteDataStartIndex;
 
-                var chartData =new ChartData(style, difficulty, rating, author, noteData);
+				while (fileContent[noteDataEndIndex].Contains(";") == false) noteDataEndIndex++;
 
-                result.Add(chartData);
+				var noteData =
+					fileContent.Skip(noteDataStartIndex)
+						.Take(noteDataEndIndex - noteDataStartIndex)
+						.ToList();
 
-                i = noteDataEndIndex;
+				var chartData = new ChartData(style, difficulty, rating, authorString, noteData);
+
+				result.Add(chartData);
+
+				i = noteDataEndIndex;
             }
 
             return result;
+
+        }
+
+        private List<ChartData> ExtractSmChartData()
+        {
+			var result = new List<ChartData>();
+			var fileContent = File.ReadAllLines(this.SmFileInfo.FullName).ToList();
+
+			for (int i = 0; i < fileContent.Count; i++)
+			{
+				if (!fileContent[i].Contains("#NOTES:")) continue;
+
+				string styleLine = fileContent[i + 1];
+				string author = fileContent[i + 2].Trim().TrimEnd(':');
+				string difficultyLine = fileContent[i + 3];
+				int rating = (int)double.Parse(fileContent[i + 4].Trim().TrimEnd(':'));
+
+				PlayStyle style = EnumExtensions.ToStyleEnum(styleLine);
+				SongDifficulty difficulty = EnumExtensions.ToSongDifficultyEnum(difficultyLine);
+
+				int noteDataStartIndex = i + 6;
+				//Stupid Edge case
+				if (fileContent[i + 5].Trim().EndsWith(":") == false)
+				{
+					var nextLine = string.Concat(fileContent[i + 5].Trim().SkipWhile(c => c != ':').Skip(1));
+					fileContent.Insert(i + 6, nextLine);
+				}
+
+				int noteDataEndIndex = noteDataStartIndex;
+
+				while (fileContent[noteDataEndIndex].Contains(";") == false) noteDataEndIndex++;
+
+				var noteData =
+					fileContent.Skip(noteDataStartIndex)
+						.Take(noteDataEndIndex - noteDataStartIndex)
+						.ToList();
+
+				var chartData = new ChartData(style, difficulty, rating, author, noteData);
+
+				result.Add(chartData);
+
+				i = noteDataEndIndex;
+			}
+
+			return result;
         }
 
         public string GetAttribute(SmFileAttribute attribute)

@@ -20,9 +20,15 @@ namespace LightsBuilder.Core.Parsers
             if (Directory.Exists(rootPath) == false)
                 throw new ArgumentException("Directory passed to FindSmFiles does not exist");
 
-            return Directory.GetFiles(rootPath, "*.sm", SearchOption.AllDirectories)
-                            .AsParallel()
-                            .Select(p => new SmFileManager(p));
+            IEnumerable<SmFileManager> smFiles = Directory.GetFiles(rootPath, "*.sm", SearchOption.AllDirectories)
+                .AsParallel()
+                .Select(p => new SmFileManager(p));
+
+			IEnumerable<SmFileManager> sscFiles = Directory.GetFiles(rootPath, "*.ssc", SearchOption.AllDirectories)
+				.AsParallel()
+				.Select(p => new SmFileManager(p));
+
+            return smFiles.Concat(sscFiles);
         }
     }
 }

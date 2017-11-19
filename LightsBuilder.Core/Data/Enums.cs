@@ -33,6 +33,7 @@ namespace LightsBuilder.Core.Data
 
     public enum SongDifficulty
     {
+        Undefined = 0,
         Beginner,
         Easy,
         Medium,
@@ -42,12 +43,19 @@ namespace LightsBuilder.Core.Data
 
     public enum PlayStyle
     {
-        Undefined,
+        Undefined = 0,
         Single,
         Double,
         Couple,
         Solo,
         Lights
+    }
+
+    public enum ChartFormat
+    {
+        Undefined = 0,
+        sm,
+        ssc
     }
 
     public static class EnumExtensions
