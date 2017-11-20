@@ -105,7 +105,7 @@ namespace LightsBuilder.Core.Parsers
                     {
                         meterString = currentLine.Replace("#METER:", "").Replace(";", "");
                     }
-                    else if (currentLine.Contains("#NOTES:"))
+                    else if (currentLine.Contains("#NOTES"))
                     {
                         break;
                     }
