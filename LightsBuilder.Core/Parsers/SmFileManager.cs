@@ -8,31 +8,58 @@ namespace LightsBuilder.Core.Parsers
 {
     public class SmFileManager : IDisposable
     {
-        
-        private FileInfo SmFileInfo { get;  set; }
 
-        private List<ChartData> StepCharts { get;  set; }
+        private FileInfo SmFileInfo { get; set; }
 
-        
+        private List<ChartData> StepCharts { get; set; }
+
+        private ChartFormat SmChartFormat { get; set; }
 
         public SongData SongData { get; private set; }
 
-        public SmFileManager(string smFilePath) : this( new FileInfo(smFilePath) )
+        public SmFileManager(string smFilePath) : this(new FileInfo(smFilePath))
         {
-            
+
         }
 
         public SmFileManager(FileInfo smFile)
         {
             this.SmFileInfo = smFile;
 
-            if (this.SmFileInfo.Exists == false || this.SmFileInfo.Extension.ToLower() != ".sm")
+            if (this.SmFileInfo.Exists == false)
             {
-                throw new ArgumentException($"The given .sm file path is either invalid or a file was not found. Path: {this.SmFileInfo.FullName}");
+                throw new ArgumentException($"The given file path is either invalid or a file was not found. Path: {this.SmFileInfo.FullName}");
             }
 
-            this.StepCharts = this.ExtractChartData();
+            ChartFormat curChartFormat;
+            Enum.TryParse(this.SmFileInfo.Extension.ToLower().Replace(".", ""), out curChartFormat);
+
+            if (curChartFormat == ChartFormat.Undefined)
+            {
+                throw new ArgumentException($"The given file is must either be a .sm or .ssc. Path: {this.SmFileInfo.FullName}");
+            }
+
+            this.SmChartFormat = curChartFormat;
             this.SongData = this.ExtractSongData();
+
+            try
+            {
+                if (this.SmChartFormat == ChartFormat.sm)
+                {
+                    this.StepCharts = this.ExtractSmChartData();
+                }
+                else if (this.SmChartFormat == ChartFormat.ssc)
+                {
+                    this.StepCharts = this.ExtractSscChartData();
+                }
+            } 
+            catch (Exception)
+            {
+                Console.WriteLine("Error in: " + this.SmFileInfo.Name); 
+                
+                //reset and clear stepcharts.
+                this.StepCharts = new List<ChartData>();
+            }
         }
 
         private SongData ExtractSongData()
@@ -52,31 +79,52 @@ namespace LightsBuilder.Core.Parsers
             return songData;
         }
 
-        private List<ChartData> ExtractChartData()
+        private List<ChartData> ExtractSscChartData()
         {
             var result = new List<ChartData>();
             var fileContent = File.ReadAllLines(this.SmFileInfo.FullName).ToList();
 
             for (int i = 0; i < fileContent.Count; i++)
             {
-                if (!fileContent[i].Contains("#NOTES:")) continue;
+                if (!fileContent[i].Contains("#NOTEDATA:")) continue;
 
-                string styleLine      = fileContent[i + 1];
-                string author         = fileContent[i + 2].Trim().TrimEnd(':');
-                string difficultyLine = fileContent[i + 3];
-                int rating            = (int)double.Parse(fileContent[i + 4].Trim().TrimEnd(':') );
+                string styleString = "", authorString = "", difficultyString = "", meterString = "";
 
-                PlayStyle      style      = EnumExtensions.ToStyleEnum(styleLine);
-                SongDifficulty difficulty = EnumExtensions.ToSongDifficultyEnum(difficultyLine);
+                int noteDataStartIndex;
 
-                int noteDataStartIndex = i + 6;
-                //Stupid Edge case
-                if (fileContent[i + 5].Trim().EndsWith(":") == false)
+                for (noteDataStartIndex = i; noteDataStartIndex < fileContent.Count; noteDataStartIndex++)
                 {
-                    var nextLine = string.Concat(fileContent[i + 5].Trim().SkipWhile(c=> c != ':').Skip(1));
-                    fileContent.Insert(i + 6, nextLine);
+                    string currentLine = fileContent[noteDataStartIndex];
+
+                    if (currentLine.Contains("#STEPSTYPE:"))
+                    {
+                        styleString = currentLine.Replace("#STEPSTYPE:", "").Replace(";", "");
+                    }
+                    else if (currentLine.Contains("#CREDIT:"))
+                    {
+                        authorString = currentLine.Replace("#CREDIT:", "").Replace(";", "");
+                    }
+                    else if (currentLine.Contains("#DIFFICULTY:"))
+                    {
+                        difficultyString = currentLine.Replace("#DIFFICULTY:", "").Replace(";", "");
+                    }
+                    else if (currentLine.Contains("#METER:"))
+                    {
+                        meterString = currentLine.Replace("#METER:", "").Replace(";", "");
+                    }
+                    else if (currentLine.Contains("#NOTES"))
+                    {
+                        break;
+                    }
                 }
-                
+
+                int rating = (int)double.Parse(meterString);
+
+                PlayStyle style = EnumExtensions.ToStyleEnum(styleString);
+                SongDifficulty difficulty = EnumExtensions.ToSongDifficultyEnum(difficultyString);
+
+                noteDataStartIndex++;
+
                 int noteDataEndIndex = noteDataStartIndex;
 
                 while (fileContent[noteDataEndIndex].Contains(";") == false) noteDataEndIndex++;
@@ -86,7 +134,52 @@ namespace LightsBuilder.Core.Parsers
                         .Take(noteDataEndIndex - noteDataStartIndex)
                         .ToList();
 
-                var chartData =new ChartData(style, difficulty, rating, author, noteData);
+                SscChartData chartData = new SscChartData(style, difficulty, rating, authorString, noteData);
+
+                result.Add(chartData);
+
+                i = noteDataEndIndex;
+            }
+
+            return result;
+
+        }
+
+        private List<ChartData> ExtractSmChartData()
+        {
+            var result = new List<ChartData>();
+            var fileContent = File.ReadAllLines(this.SmFileInfo.FullName).ToList();
+
+            for (int i = 0; i < fileContent.Count; i++)
+            {
+                if (!fileContent[i].Contains("#NOTES:")) continue;
+
+                string styleLine = fileContent[i + 1];
+                string author = fileContent[i + 2].Trim().TrimEnd(':');
+                string difficultyLine = fileContent[i + 3];
+                int rating = (int)double.Parse(fileContent[i + 4].Trim().TrimEnd(':'));
+
+                PlayStyle style = EnumExtensions.ToStyleEnum(styleLine);
+                SongDifficulty difficulty = EnumExtensions.ToSongDifficultyEnum(difficultyLine);
+
+                int noteDataStartIndex = i + 6;
+                //Stupid Edge case
+                if (fileContent[i + 5].Trim().EndsWith(":") == false)
+                {
+                    var nextLine = string.Concat(fileContent[i + 5].Trim().SkipWhile(c => c != ':').Skip(1));
+                    fileContent.Insert(i + 6, nextLine);
+                }
+
+                int noteDataEndIndex = noteDataStartIndex;
+
+                while (fileContent[noteDataEndIndex].Contains(";") == false) noteDataEndIndex++;
+
+                var noteData =
+                    fileContent.Skip(noteDataStartIndex)
+                        .Take(noteDataEndIndex - noteDataStartIndex)
+                        .ToList();
+
+                var chartData = new SmChartData(style, difficulty, rating, author, noteData);
 
                 result.Add(chartData);
 
@@ -105,7 +198,7 @@ namespace LightsBuilder.Core.Parsers
             var fileContent = File.ReadAllLines(this.SmFileInfo.FullName);
 
             string attributeLine = fileContent.FirstOrDefault(line => line.Contains($"#{attributeName}:"));
-            
+
             if (attributeLine != null)
             {
                 return attributeLine
@@ -137,9 +230,9 @@ namespace LightsBuilder.Core.Parsers
 
         public void AddNewStepchart(ChartData chartData)
         {
-            if(this._isDisposed) throw new InvalidOperationException("This Object has already been disposed!");
+            if (this._isDisposed) throw new InvalidOperationException("This Object has already been disposed!");
 
-            if(chartData == null)
+            if (chartData == null)
                 throw new ArgumentNullException(nameof(chartData), "Attempted to add null chart data.");
 
             if (this.GetChartData(chartData.PlayStyle, chartData.Difficulty) != null)
@@ -155,21 +248,29 @@ namespace LightsBuilder.Core.Parsers
 
             File.AppendAllLines(this.SmFileInfo.FullName, chartData.GetRawChartData());
         }
-        
+
         public static ChartData GenerateLightsChart(ChartData referenceChart)
         {
             if (referenceChart == null)
                 throw new ArgumentNullException(nameof(referenceChart), "referenceChart cannot be null.");
 
+            ChartData lightChart = null;
 
-            var lightChart = new ChartData(PlayStyle.Lights, SongDifficulty.Easy, difficultyRating: 1, chartAuthor: "SMLightsBuilder");
+            if (referenceChart.ChartFileFormat == ChartFormat.sm)
+            {
+                lightChart = new SmChartData(PlayStyle.Lights, SongDifficulty.Easy, difficultyRating: 1, chartAuthor: "SMLightsBuilder");
+            }
+            else if (referenceChart.ChartFileFormat == ChartFormat.ssc)
+            {
+                lightChart = new SscChartData(PlayStyle.Lights, SongDifficulty.Easy, difficultyRating: 1, chartAuthor: "SMLightsBuilder");
+            }
 
             bool isHolding = false;
             foreach (var referenceMeasure in referenceChart.Measures)
             {
                 int quarterNoteBeatIndicator = referenceMeasure.Notes.Count / 4;
                 int noteIndex = 0;
-                
+
                 var newMeasure = new MeasureData();
 
                 foreach (var note in referenceMeasure.Notes)
@@ -181,7 +282,7 @@ namespace LightsBuilder.Core.Parsers
                         marqueeLights = MapMarqueeLightsForDoubles(marqueeLights);
                     }
 
-                    bool isQuarterBeat = noteIndex%quarterNoteBeatIndicator == 0;
+                    bool isQuarterBeat = noteIndex % quarterNoteBeatIndicator == 0;
                     bool hasNote = marqueeLights.Any(c => c != '0');
                     bool isHoldBegin = marqueeLights.Any(c => c == '2' || c == '4');
                     bool isHoldEnd = marqueeLights.Any(c => c == '3');

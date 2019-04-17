@@ -6,8 +6,9 @@ using System.Linq;
 namespace LightsBuilder.Core.Data
 {
     [DebuggerDisplay("{PlayStyle} - {Difficulty} - {DifficultyRating}")]
-    public class ChartData
+    abstract public class ChartData
     {
+        public ChartFormat ChartFileFormat { get; set; }
         public PlayStyle PlayStyle { get; set; }
         public SongDifficulty Difficulty { get; set; }
         public int DifficultyRating { get; set; }
@@ -31,25 +32,18 @@ namespace LightsBuilder.Core.Data
             this.Measures = this.ParseRawChartData(rawChartData);
         }
 
-        private List<MeasureData> ParseRawChartData(List<string> rawChartData)
+        protected List<MeasureData> ParseRawChartData(List<string> rawChartData)
         {
             var rawMeasures = string.Join("\n", rawChartData).Split(',');
 
             return rawMeasures.Select( data => new MeasureData(data) ).ToList();
         }
 
+        abstract public List<string> GetHeader();
+
         public List<string> GetRawChartData()
         {
-            var rawData = new List<string>
-            {
-                $"//---------------{this.PlayStyle.ToStyleName()}-----------------",
-                $"#NOTES:",
-                $"    {this.PlayStyle.ToStyleName()}:",
-                $"    {this.ChartAuthor}:",
-                $"    {this.Difficulty}:",
-                $"    {this.DifficultyRating}:",
-                $"    0.000,0.000,0.000,0.000,0.000:"
-            };
+            var rawData = GetHeader();
 
             foreach (var measureData in this.Measures)
             {

@@ -53,6 +53,7 @@ namespace LightsBuilder.Client
             await Task.Run(() =>
             {
                 var backupFiles = Directory.GetFiles(this.SongsFolderPath, "*.sm*", SearchOption.AllDirectories).Where(f => f.EndsWith(".backup")).Select(f => new FileInfo(f));
+                backupFiles.Concat(Directory.GetFiles(this.SongsFolderPath, "*.ssc*", SearchOption.AllDirectories).Where(f => f.EndsWith(".backup")).Select(f => new FileInfo(f)));
 
                 Parallel.ForEach(backupFiles, file =>
                 {
@@ -77,7 +78,7 @@ namespace LightsBuilder.Client
 
             Mouse.OverrideCursor = null;
 
-            var prompt = MessageBox.Show($"You are about to try to process {smFiles.Count} .sm files to add light charts, continue?", 
+            var prompt = MessageBox.Show($"You are about to try to process {smFiles.Count} files to add light charts, continue?", 
                                           "Confirm", 
                                           MessageBoxButton.YesNo);
 

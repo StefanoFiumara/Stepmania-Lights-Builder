@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LightsBuilder.Tests", "Ligh
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LightsBuilder.Client", "LightsBuilder.Client\LightsBuilder.Client.csproj", "{BD2CBD99-7FD4-4A70-9B82-C9F9EB905733}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LightsBuilder.CLI", "LightsBuilder.CLI\LightsBuilder.CLI.csproj", "{5B6EC189-AF04-4870-9147-78710642EF17}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{BD2CBD99-7FD4-4A70-9B82-C9F9EB905733}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BD2CBD99-7FD4-4A70-9B82-C9F9EB905733}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BD2CBD99-7FD4-4A70-9B82-C9F9EB905733}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5B6EC189-AF04-4870-9147-78710642EF17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5B6EC189-AF04-4870-9147-78710642EF17}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5B6EC189-AF04-4870-9147-78710642EF17}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5B6EC189-AF04-4870-9147-78710642EF17}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
