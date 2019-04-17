@@ -42,17 +42,24 @@ namespace LightsBuilder.Core.Parsers
             this.SmChartFormat = curChartFormat;
             this.SongData = this.ExtractSongData();
 
-            if (this.SmChartFormat == ChartFormat.sm)
+            try
             {
-                this.StepCharts = this.ExtractSmChartData();
-            }
-            else if (this.SmChartFormat == ChartFormat.ssc)
+                if (this.SmChartFormat == ChartFormat.sm)
+                {
+                    this.StepCharts = this.ExtractSmChartData();
+                }
+                else if (this.SmChartFormat == ChartFormat.ssc)
+                {
+                    this.StepCharts = this.ExtractSscChartData();
+                }
+            } 
+            catch (Exception)
             {
-                this.StepCharts = this.ExtractSscChartData();
+                Console.WriteLine("Error in: " + this.SmFileInfo.Name); 
+                
+                //reset and clear stepcharts.
+                this.StepCharts = new List<ChartData>();
             }
-
-
-
         }
 
         private SongData ExtractSongData()
